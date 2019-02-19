@@ -2,10 +2,10 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.inspur.incloudmanager</groupId>
-	<artifactId>vijava</artifactId>
+	<artifactId>incloud-vijava</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>vijava</name>
-	<description>vijava</description>
+	<name>incloud-vijava</name>
+	<description>incloud-vijava</description>
 	<dependencies>
 		<dependency>
 			<groupId>dom4j</groupId>
