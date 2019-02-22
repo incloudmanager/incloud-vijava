@@ -66,11 +66,13 @@ final public class WSClient
   private final static String SOAP_ACTION_V50 = "urn:vim25/5.0";
   private final static String SOAP_ACTION_V51 = "urn:vim25/5.1";
   private final static String SOAP_ACTION_V55 = "urn:vim25/5.5";
+  private final static String SOAP_ACTION_PREFIX = "urn:vim25/";
   
   private URL baseUrl = null;
   private String cookie = null;
   private String vimNameSpace = null;
   private String soapAction = null;
+  private String latestSoapAction = null;
   private int connectTimeout = 0;
   private int readTimeout = 0;
   
@@ -114,7 +116,7 @@ final public class WSClient
     InputStream is = null;
     try 
     {
-      is = post(soapMsg);
+      is = post(soapMsg, null);
       return xmlGen.fromXML(returnType, is);
     }
     catch (Exception e1) 
@@ -134,7 +136,7 @@ final public class WSClient
 
     try 
     {
-      InputStream is = post(soapMsg);
+      InputStream is = post(soapMsg, null);
       return readStream(is);
     } catch (Exception e) 
     {
@@ -142,7 +144,33 @@ final public class WSClient
     }
   }
 
-  public InputStream post(String soapMsg) throws IOException
+  public StringBuffer invokeAsStringWithVersion(String methodName, Argument[] paras, String apiVersion) throws RemoteException
+  {
+    String soapMsg = XmlGen.toXML(methodName, paras, this.vimNameSpace);
+    try 
+    {
+      InputStream is = post(soapMsg, apiVersion);
+      return readStream(is);
+    } catch (Exception e) 
+    {
+      throw new RemoteException("VI SDK invoke exception:" + e);
+    }
+  }
+  
+  public StringBuffer invokeAsStringWithLatestVersion(
+		  String methodName, Argument[] paras) throws RemoteException
+  {
+    try 
+    {
+    	return this.invokeAsStringWithVersion(methodName, paras, latestSoapAction);
+    } catch (Exception e) 
+    {
+      throw new RemoteException("VI SDK invoke exception:" + e);
+    }
+  }
+  
+  
+  public InputStream post(String soapMsg, String apiVersion) throws IOException
   {
     HttpURLConnection postCon = (HttpURLConnection) baseUrl.openConnection();
     
@@ -159,7 +187,11 @@ final public class WSClient
     }
     postCon.setDoOutput(true);
     postCon.setDoInput(true);
-    postCon.setRequestProperty(SOAP_ACTION_HEADER, soapAction);
+    if (apiVersion == null || "".equals(apiVersion)) {
+    	postCon.setRequestProperty(SOAP_ACTION_HEADER, soapAction);
+    } else {
+    	postCon.setRequestProperty(SOAP_ACTION_HEADER, apiVersion);
+    }
     postCon.setRequestProperty("Content-Type", "text/xml; charset=utf-8");
     
     if(cookie!=null)
@@ -277,6 +309,8 @@ final public class WSClient
     { //always defaults to latest version 
       soapAction = SOAP_ACTION_V55;
     }
+   
+    latestSoapAction = SOAP_ACTION_PREFIX + apiVersion;
   }
   
   private StringBuffer readStream(InputStream is) throws IOException
