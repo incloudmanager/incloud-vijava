@@ -45,6 +45,7 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.Iterator;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
@@ -52,6 +53,9 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+
+import net.sf.json.JSONObject;
+import net.sf.json.xml.XMLSerializer;
 
 /** 
  * The Web Service Engine
@@ -144,25 +148,39 @@ final public class WSClient
     }
   }
 
-  public StringBuffer invokeAsStringWithVersion(String methodName, Argument[] paras, String apiVersion) throws RemoteException
+  public JSONObject invokeAsJsonWithVersion(String methodName, Argument[] paras, String apiVersion) throws RemoteException
   {
     String soapMsg = XmlGen.toXML(methodName, paras, this.vimNameSpace);
     try 
     {
       InputStream is = post(soapMsg, apiVersion);
-      return readStream(is);
+      StringBuffer sb =  readStream(is);
+      XMLSerializer xmlSerializer = new XMLSerializer();
+      xmlSerializer.setSkipNamespaces(true);
+      JSONObject json = (JSONObject) xmlSerializer.read(sb.toString());
+      JSONObject response = null;
+      if (json.containsKey("Body")) {
+		response = json.getJSONObject("Body");
+      } else {
+		response = json.getJSONObject("soapenv:Body");
+      }
+      if (response.containsKey("soapenv:Fault")) {
+    	  throw new RemoteException(response.getJSONObject("soapenv:Fault").toString());
+      }
+      Iterator it = response.keys();
+      return response.getJSONObject((String) it.next()).getJSONObject("returnval");
     } catch (Exception e) 
     {
       throw new RemoteException("VI SDK invoke exception:" + e);
     }
   }
   
-  public StringBuffer invokeAsStringWithLatestVersion(
+  public JSONObject invokeAsJsonWithLatestVersion(
 		  String methodName, Argument[] paras) throws RemoteException
   {
     try 
     {
-    	return this.invokeAsStringWithVersion(methodName, paras, latestSoapAction);
+    	return this.invokeAsJsonWithVersion(methodName, paras, latestSoapAction);
     } catch (Exception e) 
     {
       throw new RemoteException("VI SDK invoke exception:" + e);

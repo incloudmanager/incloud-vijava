@@ -2,6 +2,9 @@
 
 import java.net.URL;
 
+import net.sf.json.JSONObject;
+
+import com.vmware.vim25.EnvironmentBrowserConfigOptionQuerySpec;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.mo.ServiceInstance;
 import com.vmware.vim25.ws.Argument;
@@ -23,12 +26,12 @@ public class Test {
         ManagedObjectReference envMor = new ManagedObjectReference();
         envMor.setVal("envbrowser-122");
         envMor.setType("EnvironmentBrowser");
-	    Argument[] paras = new Argument[4];
+        EnvironmentBrowserConfigOptionQuerySpec spec = new EnvironmentBrowserConfigOptionQuerySpec();
+        spec.setGuestId(new String[]{"windows7Guest"});
+        Argument[] paras = new Argument[2];
 	    paras[0] = new Argument("_this", "ManagedObjectReference", envMor);
-	    paras[1] = new Argument("key", "String", null);
-	    paras[2] = new Argument("host", "ManagedObjectReference", null);
-	    paras[3] = new Argument("guestId", "String", null);
-		StringBuffer sb = wsc.invokeAsStringWithLatestVersion(methodName, paras);
-		System.out.println(sb.toString());
+	    paras[1] = new Argument("spec", "EnvironmentBrowserConfigOptionQuerySpec", spec);
+		JSONObject json = wsc.invokeAsJsonWithVersion(methodName, paras, version);
+		System.out.println(json.toString());
 	}
 }
