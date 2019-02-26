@@ -32,11 +32,14 @@ package com.vmware.vim25.mo;
 import java.rmi.RemoteException;
 
 import com.vmware.vim25.ConfigTarget;
+import com.vmware.vim25.EnvironmentBrowserConfigOptionQuerySpec;
 import com.vmware.vim25.HostCapability;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.RuntimeFault;
 import com.vmware.vim25.VirtualMachineConfigOption;
 import com.vmware.vim25.VirtualMachineConfigOptionDescriptor;
+
+import net.sf.json.JSONObject;
 
 /**
  * The managed object class corresponding to the one defined in VI SDK API reference.
@@ -59,6 +62,10 @@ public class EnvironmentBrowser extends ManagedObject
   public VirtualMachineConfigOption queryConfigOption(String key, HostSystem host) throws RuntimeFault, RemoteException 
   {
     return getVimService().queryConfigOption(getMOR(), key, host==null? null : host.getMOR());
+  }
+  public JSONObject queryConfigOptionEx(EnvironmentBrowserConfigOptionQuerySpec spec) throws RuntimeFault, RemoteException 
+  {
+	  return getVimService().queryConfigOptionEx(getMOR(), spec);
   }
   
   public VirtualMachineConfigOptionDescriptor[] queryConfigOptionDescriptor() throws RuntimeFault, RemoteException 

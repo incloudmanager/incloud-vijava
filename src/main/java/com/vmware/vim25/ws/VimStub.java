@@ -28,9 +28,11 @@ POSSIBILITY OF SUCH DAMAGE.
 ================================================================================*/
 
 package com.vmware.vim25.ws;
+import java.util.Calendar;
+
 import com.vmware.vim25.*;
 
-import java.util.Calendar;
+import net.sf.json.JSONObject;
 
 /**
 * @author Steve Jin (http://www.doublecloud.org)
@@ -610,6 +612,12 @@ public class VimStub
     paras[1] = new Argument("key", "String", key);
     paras[2] = new Argument("host", "ManagedObjectReference", host);
     return (VirtualMachineConfigOption) wsc.invoke("QueryConfigOption", paras, "VirtualMachineConfigOption");
+  }
+  public JSONObject queryConfigOptionEx(ManagedObjectReference _this, EnvironmentBrowserConfigOptionQuerySpec spec) throws java.rmi.RemoteException, RuntimeFault {
+	  Argument[] paras = new Argument[2];
+	  paras[0] = new Argument("_this", "ManagedObjectReference", _this);
+	  paras[1] = new Argument("spec", "EnvironmentBrowserConfigOptionQuerySpec", spec);
+	  return wsc.invokeAsJsonWithVersion("QueryConfigOptionEx", paras,"urn:vim25/6.5");
   }
   public ConfigTarget queryConfigTarget(ManagedObjectReference _this, ManagedObjectReference host) throws java.rmi.RemoteException, RuntimeFault {
     Argument[] paras = new Argument[2];
