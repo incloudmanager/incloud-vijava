@@ -30,14 +30,20 @@ POSSIBILITY OF SUCH DAMAGE.
 
 package com.vmware.vim25.ws;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
+import java.nio.Buffer;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.dom4j.Document;
 import org.dom4j.Element;
 import org.dom4j.io.SAXReader;
@@ -53,66 +59,108 @@ import com.vmware.vim25.ManagedObjectReference;
 
 final class XmlGenDom extends XmlGen
 {
+  private  Log log = LogFactory.getLog(this.getClass());
   public Object fromXML(String returnType, InputStream is) throws RemoteException
   {
-    Element root = null;
-    try 
-    {
-      SAXReader reader = new SAXReader();
-      Document doc = reader.read(is);
-      root = doc.getRootElement();
-    } 
-    catch (Exception e1) 
-    {
-      throw new RemoteException("VI SDK invoke exception:" + e1);
-    }
-    finally
-    {
-      if(is!=null) 
-        try { is.close(); } catch(IOException ioe) {}
-    }
-    
-    Element body = (Element) root.elements().get(0);
-    Element resp = (Element) body.elements().get(0);
-    
-    if(resp.getName().indexOf("Fault")!=-1)
-    {
-      SoapFaultException sfe = null;
-      try 
-      {
-        sfe = parseSoapFault(resp);
-      } 
-      catch (Exception e) 
-      {
-        throw new RemoteException("Exception in WSClient.invoke:", e);
-      }
-      if(sfe!=null && sfe.detail!=null)
-      {
-        throw (RemoteException) sfe.detail;
-      }
-      else
-      {
-        throw sfe;
-      }
-    }
-    else
-    {
-      if(returnType!=null)
-      {
-        try 
-        {
-          return fromXML(returnType, resp);
-        } 
-        catch (Exception e) 
-        {
-          throw new RemoteException("Exception in WSClient.invoke:", e);
-        }
-      }
-      else
-      {
-        return null;
-      }
-    }
+	Document doc = null;
+	ByteArrayInputStream bin = null;
+	try {
+		Element root = null;
+	    try 
+	    {
+	      StringBuffer sb = new StringBuffer();
+	      BufferedReader br = new BufferedReader(new InputStreamReader(is));
+	      String line = null;
+	      while ((line = br.readLine()) != null) {
+	        sb.append(line);
+	      }
+	      if (sb.length() == 0) {
+	    	  log.error("VI SDK invoke exception. Empty Soap Response.");
+		      throw new RemoteException("VI SDK invoke exception. Empty Soap Response.");
+	      } else {
+	    	  SAXReader reader = new SAXReader();
+	    	  bin =  new ByteArrayInputStream(sb.toString().getBytes());
+	    	  doc = reader.read(bin);
+	    	  root = doc.getRootElement();
+	      }
+	    } 
+	    catch (Exception e1) 
+	    {
+	      throw new RemoteException("VI SDK invoke exception:" + e1);
+	    }
+	    finally
+	    {
+	      if(is!=null) {
+	    	  try {
+	    		  is.close();
+			} catch (Exception e) {
+				// TODO: handle exception
+			}
+	      }
+	      if (bin != null) {
+	    	  try {
+				bin.close();
+			} catch (Exception e) {
+				// TODO: handle exception
+			}
+	      } 
+	    }
+	    
+	    Element body = (Element) root.elements().get(0);
+	    Element resp = (Element) body.elements().get(0);
+	    
+	    if(resp.getName().indexOf("Fault")!=-1)
+	    {
+	      SoapFaultException sfe = null;
+	      try 
+	      {
+	        sfe = parseSoapFault(resp);
+	      } 
+	      catch (Exception e) 
+	      {
+	        throw new RemoteException("Exception in WSClient.invoke:", e);
+	      }
+	      if(sfe!=null && sfe.detail!=null)
+	      {
+	        throw (RemoteException) sfe.detail;
+	      }
+	      else
+	      {
+	        throw sfe;
+	      }
+	    }
+	    else
+	    {
+	      if(returnType!=null)
+	      {
+	        try 
+	        {
+	          return fromXML(returnType, resp);
+	        } 
+	        catch (Exception e) 
+	        {
+	          throw new RemoteException("Exception in WSClient.invoke:", e);
+	        }
+	      }
+	      else
+	      {
+	        return null;
+	      }
+	    }
+	} catch (RemoteException  e1) {
+		log.error(e1.getMessage(), e1);
+		if (doc != null) {
+			log.error(doc.asXML());
+		}
+		throw e1;
+	} catch (Exception e2) {
+		log.error(e2.getMessage(), e2);
+		if (doc != null) {
+			log.error(doc.asXML());
+		}
+        throw new RemoteException("Exception in WSClient.invoke:", e2);
+	}
+
   }
   
   private SoapFaultException parseSoapFault(Element root) throws Exception
